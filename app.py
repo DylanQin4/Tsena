@@ -93,7 +93,7 @@ def paiement(box_id):
         conn.close()
         message = "Paiement enregistre avec succes."
         return render_template('paiement.html', box=box, message=message, paiement_details=paiement_details)
-
+    
 @app.route('/', methods=['GET', 'POST'])
 def index():
     mois = request.args.get('mois', 1, type=int)
@@ -119,22 +119,29 @@ def index():
          FROM facture f
          WHERE f.contrat_id IN (SELECT id FROM contrat WHERE box_id = b.id)
            AND f.mois = ? AND f.annee = ?
-        ) AS montant_restant
+        ) AS montant_restant,
+        (
+         SELECT f.montant_total
+         FROM facture f
+         WHERE f.contrat_id IN (SELECT id FROM contrat WHERE box_id = b.id)
+           AND f.mois = ? AND f.annee = ?
+        ) AS montant_total
     FROM box b
     """
-    cursor.execute(query, (mois, mois, mois, annee))
+    cursor.execute(query, (mois, mois, mois, annee, mois, annee))
     boxes = cursor.fetchall()
     conn.close()
 
-    # Organiser les box par Tsena
+    # Organiser les boxes par Tsena
     tsena_boxes = {}
     for box in boxes:
-        tsena_nom = box[6]  # Le nom du Tsena
+        tsena_nom = box[6]  # Le nom du tsena
         if tsena_nom not in tsena_boxes:
             tsena_boxes[tsena_nom] = []
         tsena_boxes[tsena_nom].append(box)
     
     return render_template('index.html', boxes=boxes, tsena_boxes=tsena_boxes, mois=mois, annee=annee)
+
 
 
 

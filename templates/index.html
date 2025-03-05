@@ -1,30 +1,42 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liste des Boxes</title>
-    <style>
-        .box {
-            width: 50px;
-            height: 50px;
-            margin: 5px;
-            display: inline-block;
-            text-align: center;
-            color: white;
-            text-decoration: none;
-            line-height: 50px;
-        }
-    </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liste des Boxes</title>
+  <style>
+    .box-link {
+      text-decoration: none;
+      margin: 5px;
+    }
+    /* Style pour délimiter chaque tsena */
+    .tsena-container {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    /* Utilisation du flex-wrap et d'un gap pour mieux répartir les boxes */
+    .boxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body>
-    <h1>Liste des Boxes</h1>
-    
-    <!-- Formulaire de filtre -->
+  <h1 class="text-center my-4">Liste des Boxes</h1>
+  
+  <!-- Formulaire de filtre -->
+  <div class="container mb-4">
     <form method="get" action="/">
-        <label for="mois">Mois:</label>
-        <select name="mois" id="mois">
+      <div class="row g-3 align-items-center">
+        <div class="col-auto">
+          <label for="mois" class="col-form-label">Mois:</label>
+        </div>
+        <div class="col-auto">
+          <select name="mois" id="mois" class="form-select">
             <option value="1" {% if mois == 1 %}selected{% endif %}>Janvier</option>
             <option value="2" {% if mois == 2 %}selected{% endif %}>Février</option>
             <option value="3" {% if mois == 3 %}selected{% endif %}>Mars</option>
@@ -37,38 +49,57 @@
             <option value="10" {% if mois == 10 %}selected{% endif %}>Octobre</option>
             <option value="11" {% if mois == 11 %}selected{% endif %}>Novembre</option>
             <option value="12" {% if mois == 12 %}selected{% endif %}>Décembre</option>
-        </select>
-        
-        <label for="annee">Année:</label>
-        <input type="number" name="annee" id="annee" value="{{ annee }}" min="2024" max="2025">
-        
-        <button type="submit">Filtrer</button>
+          </select>
+        </div>
+        <div class="col-auto">
+          <label for="annee" class="col-form-label">Année:</label>
+        </div>
+        <div class="col-auto">
+          <input type="number" name="annee" id="annee" class="form-control" value="{{ annee }}" min="2024" max="2026">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">Filtrer</button>
+        </div>
+      </div>
     </form>
+  </div>
 
-    <div id="boxes-container">
-        {% for tsena, boxes_list in tsena_boxes.items() %}
-            <div class="tsena-container">
-                <h2>{{ tsena }}</h2>
-                <div class="boxes">
-                    {% for box in boxes_list %}
-                        {% set montant_restant = box[8] %}
-                        {% if montant_restant is not none %}
-                            {% if montant_restant > 0 %}
-                                {% set box_color = "red" %}
-                            {% else %}
-                                {% set box_color = "green" %}
-                            {% endif %}
-                        {% else %}
-                            {% set box_color = "gray" %}
-                        {% endif %}
-                        <a href="/paiement/{{box[0]}}" class="box" style="background-color: {{ box_color }};">
-                            {{ box[1] }}
-                        </a>
-                    {% endfor %}
+  <div id="boxes-container" class="container">
+    {% for tsena, boxes_list in tsena_boxes.items() %}
+    <h2>{{ tsena }}</h2>
+      <div class="tsena-container">
+        <div class="boxes">
+          {% for box in boxes_list %}
+            {# box[2] = longueur, box[3] = largeur #}
+            {% set box_width = box[2] * 20 %}
+            {% set box_height = box[3] * 20 %}
+            {% if box[8] is not none and box[9] is not none %}
+              {% set montant_total = box[9] %}
+              {% set montant_restant = box[8] %}
+              {% set montant_paye = montant_total - montant_restant %}
+              {% set percent_paid = (montant_paye / montant_total) * 100 %}
+              {% set percent_unpaid = 100 - percent_paid %}
+              <a href="/paiement/{{ box[0] }}" class="box-link">
+                <div class="progress" style="width: {{ box_width }}px; height: {{ box_height }}px;">
+                  {% if percent_paid > 0 %}
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ percent_paid }}%;" aria-valuenow="{{ percent_paid }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  {% endif %}
+                  {% if percent_unpaid > 0 %}
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ percent_unpaid }}%;" aria-valuenow="{{ percent_unpaid }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  {% endif %}
                 </div>
-            </div>
-        {% endfor %}
-    </div>
+                <div class="text-center">{{ box[1] }}</div>
+              </a>
+            {% else %}
+              <a href="/paiement/{{ box[0] }}" class="box-link" style="background-color: gray; width: {{ box_width }}px; height: {{ box_height }}px; display: inline-block; text-align: center; line-height: {{ box_height }}px; color: white;">
+                {{ box[1] }}
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
 
 </body>
 </html>
