@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Proprietaires>
+    <Proprietaire>
+        <Nom>Rasolofomanana</Nom>
+        <Prenom>Hery</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Rakoto</Nom>
+        <Prenom>Faly</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Andrianantenaina</Nom>
+        <Prenom>Mamy</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Ravelojaona</Nom>
+        <Prenom>Tiana</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Rakotondrabe</Nom>
+        <Prenom>Solofo</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Andriamahenintsoa</Nom>
+        <Prenom>Bako</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Razafindramanga</Nom>
+        <Prenom>Haja</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Rabe</Nom>
+        <Prenom>Tojo</Prenom>
+    </Proprietaire>
+    <Proprietaire>
+        <Nom>Ratsimbazafy</Nom>
+        <Prenom>Lova</Prenom>
+    </Proprietaire>
+</Proprietaires>
