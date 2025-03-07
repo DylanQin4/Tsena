@@ -20,7 +20,6 @@ CREATE TABLE box (
     numero VARCHAR(255) NOT NULL,
     longueur INTEGER NOT NULL,
     largeur INTEGER NOT NULL,
-    proprietaire_id INTEGER REFERENCES proprietaire(id),
     tsena_id INTEGER REFERENCES tsena(id)
 );
 

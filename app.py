@@ -110,8 +110,6 @@ def index():
         b.numero, 
         b.longueur, 
         b.largeur,
-        (SELECT nom FROM proprietaire WHERE id = b.proprietaire_id) AS proprietaire_nom,
-        (SELECT prenom FROM proprietaire WHERE id = b.proprietaire_id) AS proprietaire_prenom,
         (SELECT nom FROM tsena WHERE id = b.tsena_id) AS tsena_nom,
         (SELECT TOP 1 prix_m2 
          FROM historique_prix 
@@ -139,7 +137,7 @@ def index():
     # Organiser les boxes par Tsena
     tsena_boxes = {}
     for box in boxes:
-        tsena_nom = box[6]  # Le nom du tsena
+        tsena_nom = box[4]  # Le nom du tsena
         if tsena_nom not in tsena_boxes:
             tsena_boxes[tsena_nom] = []
         tsena_boxes[tsena_nom].append(box)

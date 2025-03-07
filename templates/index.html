@@ -73,9 +73,9 @@
             {# box[2] = longueur, box[3] = largeur #}
             {% set box_width = box[2] * 20 %}
             {% set box_height = box[3] * 20 %}
-            {% if box[8] is not none and box[9] is not none %}
-              {% set montant_total = box[9] %}
-              {% set montant_restant = box[8] %}
+            {% if box[6] is not none and box[7] is not none %}
+              {% set montant_total = box[7] %}
+              {% set montant_restant = box[6] %}
               {% set montant_paye = montant_total - montant_restant %}
               {% set percent_paid = (montant_paye / montant_total) * 100 %}
               {% set percent_unpaid = 100 - percent_paid %}
