@@ -8,7 +8,6 @@ def get_db_connection():
     conn = pyodbc.connect(r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=H:\IT\S6\Rattrapage\Tsena\tsena.accdb')
     return conn
 
-
 @app.route('/paiement/<int:box_id>', methods=['GET', 'POST'])
 def paiement(box_id):
     conn = get_db_connection()
@@ -35,7 +34,7 @@ def paiement(box_id):
         
         if montant <= 0:
             conn.close()
-            return render_template('paiement.html', box=box, error="Le montant doit etre superieur à 0")
+            return render_template('paiement.html', box=box, error="Le montant doit etre superieur e 0")
 
         # Requete pour obtenir les factures non entierement payees pour ce box, ordonnees par annee et mois
         query = """
@@ -99,6 +98,9 @@ def index():
     mois = request.args.get('mois', 1, type=int)
     annee = request.args.get('annee', 2024, type=int)
     
+    # Construire une date cible e partir de l'annee et du mois
+    target_date = datetime(annee, mois, 1).date()
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -111,8 +113,10 @@ def index():
         (SELECT nom FROM proprietaire WHERE id = b.proprietaire_id) AS proprietaire_nom,
         (SELECT prenom FROM proprietaire WHERE id = b.proprietaire_id) AS proprietaire_prenom,
         (SELECT nom FROM tsena WHERE id = b.tsena_id) AS tsena_nom,
-        (SELECT prix_m2 FROM prix_loyer 
-         WHERE tsena_id = b.tsena_id AND mois_debut <= ? AND mois_fin >= ?
+        (SELECT TOP 1 prix_m2 
+         FROM historique_prix 
+         WHERE tsena_id = b.tsena_id AND date_creation <= ?
+         ORDER BY date_creation DESC
         ) AS prix_m2,
         (
          SELECT f.montant_total - IIf(IsNull((SELECT SUM(p.montant) FROM paiement p WHERE p.facture_id = f.id)), 0, (SELECT SUM(p.montant) FROM paiement p WHERE p.facture_id = f.id))
@@ -128,7 +132,7 @@ def index():
         ) AS montant_total
     FROM box b
     """
-    cursor.execute(query, (mois, mois, mois, annee, mois, annee))
+    cursor.execute(query, (target_date, mois, annee, mois, annee))
     boxes = cursor.fetchall()
     conn.close()
 
@@ -142,12 +146,8 @@ def index():
     
     return render_template('index.html', boxes=boxes, tsena_boxes=tsena_boxes, mois=mois, annee=annee)
 
-
-
-
-
 def contract_exists(box_id):
-    """Verifie s'il existe dejà un contrat actif pour le box (date_fin >= aujourd'hui)."""
+    """Verifie s'il existe deje un contrat actif pour le box (date_fin >= aujourd'hui)."""
     conn = get_db_connection()
     cursor = conn.cursor()
     today = datetime.today().date()
@@ -172,15 +172,16 @@ def generate_invoices(contract_id, box_id, date_debut, date_fin):
 
     current_date = date_debut
     while current_date <= date_fin:
-        # Recuperer le prix unitaire applicable pour le mois courant depuis la table prix_loyer
+        # Recuperer le dernier prix applicable pour le Tsena e la date de la facture
         cursor.execute("""
-            SELECT prix_m2 
-            FROM prix_loyer 
-            WHERE tsena_id = ? AND mois_debut <= ? AND mois_fin >= ?
-        """, (tsena_id, current_date.month, current_date.month))
+            SELECT TOP 1 prix_m2 
+            FROM historique_prix 
+            WHERE tsena_id = ? AND date_creation <= ?
+            ORDER BY date_creation DESC
+        """, (tsena_id, current_date))
         price_row = cursor.fetchone()
         if price_row is None:
-            # Si aucun prix n'est trouve, on peut soit definir un prix par defaut, soit ne pas generer de facture.
+            # Si aucun prix n'est trouve, on definit un prix par defaut (ici 0)
             prix_unitaire = 0
         else:
             prix_unitaire = price_row[0]
@@ -223,11 +224,11 @@ def contrat():
             date_fin = datetime.strptime(request.form['date_fin'], '%Y-%m-%d').date()
         except Exception as e:
             message = "Erreur dans les donnees saisies: " + str(e)
-            return render_template('index.html', boxes=boxes, message=message)
+            return render_template('contrat.html', boxes=boxes, message=message)
         
-        # Verifier si un contrat existe dejà pour ce box
+        # Verifier si un contrat existe deje pour ce box
         if contract_exists(box_id):
-            message = "Erreur : Un contrat actif existe dejà pour ce box."
+            message = "Erreur : Un contrat actif existe deje pour ce box."
         else:
             # Inserer le contrat
             conn = get_db_connection()
@@ -247,7 +248,6 @@ def contrat():
             message = "Contrat cree et " + invoice_message
 
     return render_template('contrat.html', boxes=boxes, message=message)
-
 
 if __name__ == '__main__':
     app.run(debug=True)

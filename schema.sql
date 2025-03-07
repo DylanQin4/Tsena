@@ -24,12 +24,11 @@ CREATE TABLE box (
     tsena_id INTEGER REFERENCES tsena(id)
 );
 
-CREATE TABLE prix_loyer (
+CREATE TABLE historique_prix (
     id SERIAL PRIMARY KEY,
     prix_m2 INTEGER NOT NULL,
     tsena_id INTEGER REFERENCES tsena(id),
-    mois_debut INTEGER NOT NULL,
-    mois_fin INTEGER NOT NULL
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE contrat (
