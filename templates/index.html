@@ -76,11 +76,16 @@
             {% if box[6] is not none and box[7] is not none %}
               {% set montant_total = box[7] %}
               {% set montant_restant = box[6] %}
-              {% set montant_paye = montant_total - montant_restant %}
-              {% set percent_paid = (montant_paye / montant_total) * 100 %}
-              {% set percent_unpaid = 100 - percent_paid %}
+              {% if montant_total == 0 %}
+                {% set percent_paid = 0 %}
+                {% set percent_unpaid = 100 %}
+              {% else %}
+                {% set montant_paye = montant_total - montant_restant %}
+                {% set percent_paid = (montant_paye / montant_total) * 100 %}
+                {% set percent_unpaid = 100 - percent_paid %}
+              {% endif %}
               <a href="/paiement/{{ box[0] }}" class="box-link">
-                <div class="progress" style="width: {{ box_width }}px; height: {{ box_height }}px;">
+                <div class="progress" style="width: {{ box[2] * 20 }}px; height: {{ box[3] * 20 }}px;">
                   {% if percent_paid > 0 %}
                     <div class="progress-bar bg-success" role="progressbar" style="width: {{ percent_paid }}%;" aria-valuenow="{{ percent_paid }}" aria-valuemin="0" aria-valuemax="100"></div>
                   {% endif %}
@@ -91,7 +96,7 @@
                 <div class="text-center">{{ box[1] }}</div>
               </a>
             {% else %}
-              <a href="/paiement/{{ box[0] }}" class="box-link" style="background-color: gray; width: {{ box_width }}px; height: {{ box_height }}px; display: inline-block; text-align: center; line-height: {{ box_height }}px; color: white;">
+              <a href="/paiement/{{ box[0] }}" class="box-link" style="background-color: gray; width: {{ box[2] * 20 }}px; height: {{ box[3] * 20 }}px; display: inline-block; text-align: center; line-height: {{ box[3] * 20 }}px; color: white;">
                 {{ box[1] }}
               </a>
             {% endif %}

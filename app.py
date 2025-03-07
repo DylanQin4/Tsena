@@ -35,9 +35,20 @@ def paiement(box_id):
         if montant <= 0:
             conn.close()
             return render_template('paiement.html', box=box, error="Le montant doit etre superieur e 0")
+        
+        # Recuperer le proprietaire_id depuis un contrat associe a ce box
+        cursor.execute("SELECT TOP 1 proprietaire_id FROM contrat WHERE box_id = ? ORDER BY date_debut DESC", (box_id,))
+        row = cursor.fetchone()
+        if row is None:
+            conn.close()
+            return render_template('paiement.html', box=box, error="Aucun contrat trouve pour ce box.")
+        proprietaire_id = row[0]
 
-        # Requete pour obtenir les factures non entierement payees pour ce box, ordonnees par annee et mois
-        query = """
+        # Calculer le debut du mois de paiement
+        payment_month_start = datetime(date_paiement.year, date_paiement.month, 1).date()
+
+        # Requete pour obtenir les factures en retard (pour les boxes differents du box courant)
+        query_overdue = """
         SELECT 
             f.id, 
             f.montant_total, 
@@ -46,17 +57,44 @@ def paiement(box_id):
             (f.montant_total - IIf(IsNull(SUM(p.montant)), 0, SUM(p.montant))) AS montant_restant
         FROM facture f
         LEFT JOIN paiement p ON f.id = p.facture_id
-        WHERE f.contrat_id IN (SELECT id FROM contrat WHERE box_id = ?)
+        WHERE f.contrat_id IN (
+            SELECT id FROM contrat WHERE proprietaire_id = ? AND box_id <> ?
+        )
+          AND DateSerial(f.annee, f.mois, 1) < ?
         GROUP BY f.id, f.montant_total, f.mois, f.annee
         HAVING (f.montant_total - IIf(IsNull(SUM(p.montant)), 0, SUM(p.montant))) > 0
         ORDER BY f.annee, f.mois
         """
-        cursor.execute(query, (box_id,))
-        unpaid_factures = cursor.fetchall()
+        cursor.execute(query_overdue, (proprietaire_id, box_id, payment_month_start))
+        overdue_factures = cursor.fetchall()
+
+        # Requete pour obtenir les factures du box (factures dont le mois est superieur ou egal au mois de paiement)
+        query_current = """
+        SELECT 
+            f.id, 
+            f.montant_total, 
+            f.mois, 
+            f.annee,
+            (f.montant_total - IIf(IsNull(SUM(p.montant)), 0, SUM(p.montant))) AS montant_restant
+        FROM facture f
+        LEFT JOIN paiement p ON f.id = p.facture_id
+        WHERE f.contrat_id IN (
+            SELECT id FROM contrat WHERE proprietaire_id = ? AND box_id = ?
+        )
+          AND DateSerial(f.annee, f.mois, 1) >= ?
+        GROUP BY f.id, f.montant_total, f.mois, f.annee
+        HAVING (f.montant_total - IIf(IsNull(SUM(p.montant)), 0, SUM(p.montant))) > 0
+        ORDER BY f.annee, f.mois
+        """
+        cursor.execute(query_current, (proprietaire_id, box_id, payment_month_start))
+        current_factures = cursor.fetchall()
+
+        # Combiner les factures : d'abord les factures en retard, puis celles du box courant
+        unpaid_factures = list(overdue_factures) + list(current_factures)
 
         if not unpaid_factures:
             conn.close()
-            return render_template('paiement.html', box=box, message="Aucune facture non payee pour ce box.")
+            return render_template('paiement.html', box=box, message="Aucune facture non payee pour ce proprietaire.")
 
         paiement_details = []
         remaining_payment = montant
